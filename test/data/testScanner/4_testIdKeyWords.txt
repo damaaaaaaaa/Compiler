@@ -1,0 +1,6 @@
+int    inta
+float # io sono una parola chiave
+print
+nome
+intnome   # io sono un identificatore
+   int nome

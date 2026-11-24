@@ -1,0 +1,9 @@
+# alcune dichiarazioni
+int temp;
+int temp1;
+	temp += 5.; # operatore di assegnamento
+
+float b;
+	b = temp1 + 3.2;
+	print b;
+
