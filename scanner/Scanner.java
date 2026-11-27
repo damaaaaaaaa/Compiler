@@ -23,7 +23,7 @@ public class Scanner {
     ArrayList<Character> letters = new ArrayList<Character>();
 
     // digits: insieme delle cifre
-    ArrayList<Integer> digits = new ArrayList<Integer>();
+    ArrayList<Character> digits = new ArrayList<Character>();
 
     // delOpTkType: mapping fra caratteri '+', '-', '*', '/', '=', ';' e il
     // TokenType
@@ -45,7 +45,7 @@ public class Scanner {
             letters.add(c);
         }
 
-        for (int i = 0; i <= 9; i++) {
+        for (char i = '0'; i <= '9'; i++) {
             digits.add(i);
         }
 
@@ -66,8 +66,6 @@ public class Scanner {
     // successivo all'ultimo carattere del token)
     public Token nextToken() throws LexicalException {
 
-        riga = 0;
-
         // nextChar contiene il prossimo carattere dell'input (non consumato).
         try {
             while (true) {
@@ -80,6 +78,7 @@ public class Scanner {
                         riga++;
                     }
                     readChar();
+                    nextChar = peekChar();
                     continue;
                 }
 
@@ -88,14 +87,20 @@ public class Scanner {
                     continue;
                 }
 
-                if (delOpTkType.containsKey(nextChar)) {
-                    scanDelOp();
-                    continue;
+                else if (delOpTkType.containsKey(nextChar)) {
+                    return scanDelOp();
                 }
 
-                if (letters.contains(nextChar)) {
-                    scanId();
-                    continue;
+                else if (letters.contains(nextChar)) {
+                    return scanId();
+                }
+
+                else if (digits.contains(nextChar)) {
+                    return scanNumber();
+                }
+
+                else {
+                    throw new LexicalException("Riga: " + riga + " carattere: " + readChar());
                 }
             }
         } catch (IOException e) {
@@ -131,16 +136,48 @@ public class Scanner {
         // provocata.
     }
 
-    private Token scanId() {
+    private Token scanNumber() throws IOException, LexicalException {
+        StringBuilder stringa = new StringBuilder();
+        while (digits.contains(peekChar())) {
+            stringa.append(readChar());
+        }
+        if (peekChar() == '.') {
+            stringa.append(readChar());
+            int i = 0;
+            while (digits.contains(peekChar())) {
+                stringa.append(readChar());
+                i++;
+            }
+            if (i > 5) {
+                throw new LexicalException("Float: troppi numeri dopo il .");
+            }
+            String str = stringa.toString();
+            return new Token(TokenType.FLOAT, riga, str);
+        }
+        String str = stringa.toString();
+        return new Token(TokenType.INT, riga, str);
+    }
 
+    private Token scanId() throws IOException {
+        StringBuilder stringa = new StringBuilder();
+        while (letters.contains(peekChar()) || digits.contains(peekChar())) {
+            stringa.append(readChar());
+        }
+        String str = stringa.toString();
+        if (keyWordsTkType.containsKey(str)) {
+            return new Token(keyWordsTkType.get(str), riga);
+        }
+        return new Token(TokenType.ID, riga, str);
     }
 
     private Token scanDelOp() throws IOException {
         char c = readChar();
         if ((c == '+' || c == '-' || c == '/' || c == '*') && peekChar() == '=') {
-            return new Token(TokenType.OP_ASS, riga);
+            readChar();
+            String stringa = c + "=";
+            return new Token(TokenType.OP_ASS, riga, stringa);
         }
-        return new Token(TokenType.ASS, riga);
+        return new Token(delOpTkType.get(c), riga);
     }
 
     private void skipComment() throws IOException {
